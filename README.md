@@ -1,2 +1,5 @@
-# task_func_optimize_base_go
-Functional optimization learning task test base. Import it as testing facility for own solution.
+# Задача на оптимизацию алгоритма №1
+
+Задача создана для собеседований и для соревнования на конференции SpetrumData 2022
+
+В данном пакете содержится постановка задачи, базовая функция и набор шаблонных тестов и бенчмарков для проверки своего решения.

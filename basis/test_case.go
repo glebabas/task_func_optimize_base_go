@@ -35,7 +35,7 @@ func SuperFuncTestCase(impl SuperFuncType, t *testing.T) {
 		assert.Equal(t, 62208.0, impl(2.0, 3.0, 5))
 	})
 	t.Run("`big(n) over x1 = 1.0001, x2 = 1.00002, n = 30 -> 4.917359272354959e+65", func(t *testing.T) {
-		AssertIsValidSuperFuncF(t, 4.917359272354959e+65, 1.0001, 1.00002, 30, impl, DEFAULT_PRECESSION)
+		AssertIsValidSuperFuncF(t, 4.917359272354959e+65, 1.0001, 1.00002, 30, impl, DefaultPrecession)
 	})
 	basisRef := reflect.ValueOf(BasicSuperFuncImpl).Pointer()
 	implRef := reflect.ValueOf(impl).Pointer()
@@ -46,50 +46,50 @@ func SuperFuncTestCase(impl SuperFuncType, t *testing.T) {
 				x2 := rand.Float64()
 				n := uint8(rand.Uint32() % 30)
 				// сравнивать будем с эталонной базовой функцией
-				AssertIsValidSuperFunc(t, x1, x2, n, impl, DEFAULT_PRECESSION)
+				AssertIsValidSuperFunc(t, x1, x2, n, impl, DefaultPrecession)
 			}
 		})
 	}
 }
 
-//SuperFuncBenchmark - обобщенный бенчмарк для SuperFuncType
-// использованиек в свооем коде:
-//  `func BenchmarkMySuperFunc(b *testing.B) { SuperFuncBenchmark(MyFunc, b) }`
+// SuperFuncBenchmark - обобщенный бенчмарк для SuperFuncType
+// использование в своем коде:
+// `func BenchmarkMySuperFunc(b *testing.B) { SuperFuncBenchmark(MyFunc, b) }`
 func SuperFuncBenchmark(impl SuperFuncType, b *testing.B) {
 	b.StopTimer()
-	var seria [1024]float64
+	var xs [1024]float64
 	for i := 0; i < 512; i++ {
-		seria[i*2] = rand.Float64()
-		seria[i*2+1] = rand.Float64()
+		xs[i*2] = rand.Float64()
+		xs[i*2+1] = rand.Float64()
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		basis := i % 512
-		impl(seria[basis*2], seria[basis*2+1], DEFAULT_N_FOR_BENCHMARK)
+		impl(xs[basis*2], xs[basis*2+1], DefaultNForBenchmark)
 	}
 
 }
 
-//DEFAULT_PRECESSION - максимальная допустимая погрешность по умолчанию - 0.1%
-var DEFAULT_PRECESSION float64 = 0.001
+//DefaultPrecession - максимальная допустимая погрешность по умолчанию - 0.1%
+var DefaultPrecession = 0.001
 
-//DEFAULT_N_FOR_BENCHMARK - n c которым функция проверяется при выполнении бенчмарка
-var DEFAULT_N_FOR_BENCHMARK uint8 = 30
+//DefaultNForBenchmark - n c которым функция проверяется при выполнении бенчмарка
+var DefaultNForBenchmark uint8 = 30
 
-//AssertIsValidSuperFunc - вспомогательное утверждение для сравнения результатов
-//float64, использует IsEqualWithPrecession для сравнения с допустимой погрешностью
+// AssertIsValidSuperFunc - вспомогательное утверждение для сравнения результатов
+// float64, использует IsEqualWithPrecession для сравнения с допустимой погрешностью
 // для сравнения использует вычисляемый эталон на основе базовой функции
 func AssertIsValidSuperFunc(t *testing.T, x1 float64, x2 float64, n uint8, impl SuperFuncType, precession float64) {
-	etalon := BasicSuperFuncImpl(x1, x2, n)
+	reference := BasicSuperFuncImpl(x1, x2, n)
 	actual := impl(x1, x2, n)
-	if !IsEqualWithPrecession(etalon, actual, precession) {
+	if !IsEqualWithPrecession(reference, actual, precession) {
 		assert.Failf(t, "Функция не соответствует требованию расчета с погрешностью не более 0.01% от эталона",
-			"x1: %f, x2: %f, n:%d, etalon: %f, actual: %f", x1, x2, n, etalon, actual)
+			"x1: %f, x2: %f, n:%d, reference: %f, actual: %f", x1, x2, n, reference, actual)
 	}
 }
 
-//AssertIsValidSuperFunc - вспомогательное утверждение для сравнения результатов
-//float64, использует IsEqualWithPrecession для сравнения с допустимой погрешностью
+// AssertIsValidSuperFuncF - вспомогательное утверждение для сравнения результатов
+// float64, использует IsEqualWithPrecession для сравнения с допустимой погрешностью
 // для сравнения использует заранее вычисленное значение [reference]
 func AssertIsValidSuperFuncF(t *testing.T, reference float64, x1 float64, x2 float64, n uint8, impl SuperFuncType, precession float64) {
 	actual := impl(x1, x2, n)
@@ -99,9 +99,9 @@ func AssertIsValidSuperFuncF(t *testing.T, reference float64, x1 float64, x2 flo
 	}
 }
 
-//IsEqualWithDelta вспомогательная функция для сравнения float64
-//с учетом допустимой точности вычислений относительно эталона,
-//например погрешность 1% `IsEqualWithPrecession(x1,x2,0.01)`
-func IsEqualWithPrecession(etalon float64, actual float64, precession float64) bool {
-	return math.Abs(etalon-actual) <= (math.Abs(etalon) * precession)
+// IsEqualWithPrecession IsEqualWithDelta вспомогательная функция для сравнения float64
+// с учетом допустимой точности вычислений относительно эталона,
+// например погрешность 1% `IsEqualWithPrecession(x1,x2,0.01)`
+func IsEqualWithPrecession(reference float64, actual float64, precession float64) bool {
+	return math.Abs(reference-actual) <= (math.Abs(reference) * precession)
 }

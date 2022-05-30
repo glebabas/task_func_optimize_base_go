@@ -52,29 +52,50 @@ func SuperFuncTestCase(impl SuperFuncType, t *testing.T) {
 	}
 }
 
+type funcCase struct {
+	x1 float64
+	x2 float64
+	n  uint8
+}
+
+const CASES_SIZE = 2048
+
+func buildCases() []*funcCase {
+	// функция вызывется только один раз на запуск - все получат одинаковый набор кейсов
+	var seed int64 = rand.Int63()
+	rnd := rand.New(rand.NewSource(seed))
+	var result []*funcCase
+	for i := 0; i < CASES_SIZE; i++ {
+		x1 := rnd.Float64()
+		x2 := rnd.Float64()
+		var n uint8
+		up_or_down := rnd.Float64()
+		preN := rand.Uint32()
+		// гораздо чаще будут попадаться кейсы 20 - 30 и реже 2 - 19
+		if up_or_down > 0.2 {
+			n = uint8((preN % 11) + 20) // 20-30
+		} else {
+			n = uint8((preN % 18) + 2) // 2-19
+		}
+		result = append(result, &funcCase{x1, x2, n})
+	}
+	return result
+}
+
+var cases []*funcCase = buildCases()
+
 // SuperFuncBenchmark - обобщенный бенчмарк для SuperFuncType
 // использование в своем коде:
 // `func BenchmarkMySuperFunc(b *testing.B) { SuperFuncBenchmark(MyFunc, b) }`
 func SuperFuncBenchmark(impl SuperFuncType, b *testing.B) {
-	b.StopTimer()
-	var xs [1024]float64
-	for i := 0; i < 512; i++ {
-		xs[i*2] = rand.Float64()
-		xs[i*2+1] = rand.Float64()
-	}
-	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		basis := i % 512
-		impl(xs[basis*2], xs[basis*2+1], DefaultNForBenchmark)
+		fCase := cases[i%CASES_SIZE]
+		impl(fCase.x1, fCase.x2, fCase.n)
 	}
-
 }
 
 //DefaultPrecession - максимальная допустимая погрешность по умолчанию - 0.1%
 var DefaultPrecession = 0.001
-
-//DefaultNForBenchmark - n c которым функция проверяется при выполнении бенчмарка
-var DefaultNForBenchmark uint8 = 30
 
 // AssertIsValidSuperFunc - вспомогательное утверждение для сравнения результатов
 // float64, использует IsEqualWithPrecession для сравнения с допустимой погрешностью
@@ -104,4 +125,23 @@ func AssertIsValidSuperFuncF(t *testing.T, reference float64, x1 float64, x2 flo
 // например погрешность 1% `IsEqualWithPrecession(x1,x2,0.01)`
 func IsEqualWithPrecession(reference float64, actual float64, precession float64) bool {
 	return math.Abs(reference-actual) <= (math.Abs(reference) * precession)
+}
+
+const DefaultNForBenchmark = 30
+
+// SuperFuncBenchmark - обобщенный бенчмарк для SuperFuncType
+// использование в своем коде:
+// `func BenchmarkMySuperFunc(b *testing.B) { SuperFuncBenchmark(MyFunc, b) }`
+func OldHackedSuperFuncBenchmark(impl SuperFuncType, b *testing.B) {
+	b.StopTimer()
+	var xs [1024]float64
+	for i := 0; i < 512; i++ {
+		xs[i*2] = rand.Float64()
+		xs[i*2+1] = rand.Float64()
+	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		basis := i % 512
+		impl(xs[basis*2], xs[basis*2+1], DefaultNForBenchmark)
+	}
 }
